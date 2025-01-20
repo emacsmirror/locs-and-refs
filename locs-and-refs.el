@@ -720,7 +720,7 @@ A click on a button opens the associated file."
          (ref-regex (locs-and-refs--reference-regex))
          (regex (rx-to-string `(or ,loc-regex ,ref-regex)))
          (case-fold-search t)
-         groups tag id)
+         groups tag id name)
     (with-current-buffer this-buffer
       (when (derived-mode-p 'text-mode 'prog-mode)
         (save-excursion
