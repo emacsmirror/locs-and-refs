@@ -43,7 +43,7 @@
 ;; - fd: For fast file search.
 ;;
 ;; The code structure lives at:
-;; - https://github.com/phf-1/.emacs.d/blob/master/elisp/locs-and-refs.el.org
+;; - https://github.com/phf-1/.emacs.d/blob/master/elisp/locs-and-refs/locs-and-refs.org
 ;;
 ;;; Code:
 
