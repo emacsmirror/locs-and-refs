@@ -1,10 +1,10 @@
-;;; locs-and-refs.el --- Define locations and references for text files and buffers  -*- lexical-binding: t; -*-
+;;; locs-and-refs.el --- Define locations and references for files and buffers  -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2024 Pierre-Henry FRÖHRING
 ;; Author: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Maintainer: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Homepage: https://github.com/phf-1/locs-and-refs
-;; Package-Version: 0.16
+;; Package-Version: 0.17
 ;; Package-Requires: ((emacs "27.1") (pcre2el "1.12"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -19,8 +19,8 @@
 ;;
 ;; Locations and References for Emacs
 ;;
-;; If there is a string like "[[ref:1234]]" in some buffer, then this minor mode
-;; will turn it into a "Reference". A reference may be viewed as a button such that a
+;; If there is a string like "[[ref:1234]]" in some buffer, then this minor mode will
+;; turn it into a "Reference". A reference may be viewed as a button such that a
 ;; click will search for the matching "Location" in files' content, file names and
 ;; buffers. A matching location may be a string "[[id:1234]]" or a file named "1234".
 ;;
@@ -54,16 +54,18 @@
 ;; - org provides `org-link-set-parameters' that gives control over click behavior on
 ;;   links.
 
+
 (require 'pcre2el)
 (require 'org)
 
 ;; Configuration
 ;; This section lists the user's defined custom parameters.
 
+
 (defgroup locs-and-refs nil
   "Customization options for locs-and-refs mode.
-This mode provides functionality for handling locations and references
-within text and programming buffers."
+This mode provides functionality for handling locations and
+references within text and programming buffers."
   :group 'convenience
   :prefix "locs-and-refs-")
 
@@ -116,12 +118,15 @@ This comes after buffer creation or modification."
 ;; An instance represents a match at a given line in some file.
 
 
+
 ;; mk
 ;; λ : Path Line → LineFileMatch
 
+
 (defun locs-and-refs--line-file-match-mk (path line)
   "Create a LineFileMatch object with PATH and LINE.
-PATH should be a valid file path, and LINE should be a non-negative integer."
+PATH should be a valid file path, and LINE should be a
+non-negative integer."
   (unless (file-exists-p path) (error "PATH does not exist"))
   (unless (and (integerp line) (<= 0 line)) (error "LINE is not a positive integer"))
   (list :line-file-match path line))
@@ -129,12 +134,14 @@ PATH should be a valid file path, and LINE should be a non-negative integer."
 ;; p
 ;; λ : Any → Boolean
 
+
 (defun locs-and-refs--line-file-match-p (any)
   "Check if ANY is a LineFileMatch object."
   (eq (car-safe any) :line-file-match))
 
 ;; use
 ;; λ : (Path Line → C) → LineFileMatch → C
+
 
 (defun locs-and-refs--line-file-match-use (func)
   "Apply FUNC to the path and line of a LineFileMatch object."
@@ -145,12 +152,14 @@ PATH should be a valid file path, and LINE should be a non-negative integer."
 ;; path
 ;; λ : LineFileMatch → Path
 
+
 (defun locs-and-refs--line-file-match-path (match)
   "Extract the path from a MATCH object."
   (funcall (locs-and-refs--line-file-match-use (lambda (&rest params) (car params))) match))
 
 ;; line
 ;; λ : LineFileMatch → Line
+
 
 (defun locs-and-refs--line-file-match-line (match)
   "Extract the line number from a MATCH object."
@@ -160,12 +169,15 @@ PATH should be a valid file path, and LINE should be a non-negative integer."
 ;; An instance represents a match at a given line in some buffer.
 
 
+
 ;; mk
 ;; λ : Buffer Line → LineBufferMatch
 
+
 (defun locs-and-refs--line-buffer-match-mk (buffer line)
   "Create a LineBufferMatch object with BUFFER and LINE.
-BUFFER should be a valid buffer, and LINE should be a non-negative integer."
+BUFFER should be a valid buffer, and LINE should be a
+non-negative integer."
   (unless (bufferp buffer) (error "BUFFER does not exist"))
   (unless (and (integerp line) (<= 0 line)) (error "LINE is not a positive integer"))
   (list :line-buffer-match buffer line))
@@ -173,12 +185,14 @@ BUFFER should be a valid buffer, and LINE should be a non-negative integer."
 ;; p
 ;; λ : Any → Boolean
 
+
 (defun locs-and-refs--line-buffer-match-p (any)
   "Check if ANY is a LineBufferMatch object."
   (eq (car-safe any) :line-buffer-match))
 
 ;; use
 ;; λ : (Buffer Line → C) → LineBufferMatch → C
+
 
 (defun locs-and-refs--line-buffer-match-use (func)
   "Apply FUNC to the buffer and line of a LineBufferMatch object."
@@ -189,12 +203,14 @@ BUFFER should be a valid buffer, and LINE should be a non-negative integer."
 ;; buffer
 ;; λ : LineBufferMatch → Buffer
 
+
 (defun locs-and-refs--line-buffer-match-buffer (match)
   "Extract the buffer from a MATCH object."
   (funcall (locs-and-refs--line-buffer-match-use (lambda (&rest params) (car params))) match))
 
 ;; line
 ;; λ : LineBufferMatch → Line
+
 
 (defun locs-and-refs--line-buffer-match-line (match)
   "Extract the line number from a MATCH object."
@@ -204,8 +220,10 @@ BUFFER should be a valid buffer, and LINE should be a non-negative integer."
 ;; An instance represents a file match.
 
 
+
 ;; mk
 ;; λ : Path → FileMatch
+
 
 (defun locs-and-refs--file-match-mk (path)
   "Create a FileMatch object with PATH.
@@ -216,12 +234,14 @@ PATH should be a valid file path."
 ;; p
 ;; λ : Any → Boolean
 
+
 (defun locs-and-refs--file-match-p (any)
   "Check if ANY is a FileMatch object."
   (eq (car-safe any) :file-match))
 
 ;; use
 ;; λ : (Path → C) → FileMatch → C
+
 
 (defun locs-and-refs--file-match-use (func)
   "Apply FUNC to the path of a FileMatch object."
@@ -232,6 +252,7 @@ PATH should be a valid file path."
 ;; path
 ;; λ : FileMatch → Path
 
+
 (defun locs-and-refs--file-match-path (match)
   "Extract the path from a MATCH object."
   (funcall (locs-and-refs--file-match-use (lambda (&rest params) (car params))) match))
@@ -240,13 +261,15 @@ PATH should be a valid file path."
 ;; An instance represents either a FileMatch, LineFileMatch or a LineBufferMatch.
 
 
+
 ;; use
 ;; λ : (FileMatch → C) (LineFileMatch → C) (LineBufferMatch → C) → Match → C
 
+
 (defun locs-and-refs--match-use (file-func line-file-func line-buffer-func)
   "Apply different functions to different types of Matches.
-FILE-FUNC is applied to FileMatch, LINE-FILE-FUNC to LineFileMatch,
-and LINE-BUFFER-FUNC to LineBufferMatch."
+FILE-FUNC is applied to FileMatch, LINE-FILE-FUNC to
+LineFileMatch, and LINE-BUFFER-FUNC to LineBufferMatch."
   (lambda (match)
     (cond
      ((locs-and-refs--file-match-p match) (funcall file-func match))
@@ -256,6 +279,7 @@ and LINE-BUFFER-FUNC to LineBufferMatch."
 
 ;; name
 ;; λ : Match → String
+
 
 (defun locs-and-refs--match-name (match)
   "Return the name of the file or buffer from a MATCH object."
@@ -286,9 +310,11 @@ and LINE-BUFFER-FUNC to LineBufferMatch."
 ;; action
 ;; λ : Match → ∅ → ∅
 
+
 (defun locs-and-refs--match-action (match)
   "Create an action based on the type of MATCH.
-This action will open the file or switch to the buffer at the specified location."
+This action will open the file or switch to the buffer at the
+specified location."
   (funcall
    (locs-and-refs--match-use
     (lambda (file-match)
@@ -321,8 +347,10 @@ This action will open the file or switch to the buffer at the specified location
 ;; search matching files/buffers/filenames.
 
 
+
 ;; files
 ;; λ : RegEx → List(Match)
+
 
 (defun locs-and-refs--search-files (regex)
   "Search for REGEX in files under `locs-and-refs-root-dir' using Ripgrep.
@@ -343,6 +371,7 @@ Returns a list of LineFileMatch objects."
 
 ;; buffers
 ;; λ : RegEx → List(Match)
+
 
 (defun locs-and-refs--line-number ()
   "Return the current line number in the buffer."
@@ -366,6 +395,7 @@ Returns a list of LineBufferMatch objects."
 ;; filenames
 ;; λ : RegEx → List(Match)
 
+
 (defun locs-and-refs--search-filenames (regex)
   "Search for REGEX in filenames under `locs-and-refs-root-dir' using fd.
 Returns a list of FileMatch objects."
@@ -386,8 +416,10 @@ Returns a list of FileMatch objects."
 ;; A few utilities.
 
 
+
 ;; content
 ;; λ : Tag Optional(id) → Rx
+
 
 (defun locs-and-refs--regex-content (tag &optional id)
   "Generate a regex pattern for matching content with TAG and optional ID.
@@ -402,12 +434,15 @@ ID can be either a string or a regex pattern."
 ;; A click on an instance shows all references to it.
 
 
+
 ;; mk
 ;; λ : String Buffer Start End Name → Location
 
+
 (defun locs-and-refs--location-mk (id buffer start end name)
   "Create a Location object with ID, BUFFER, START, END and NAME.
-ID is a string, BUFFER must be a buffer object, START and END are integer positions."
+ID is a string, BUFFER must be a buffer object, START and END are
+integer positions."
   (unless (stringp id) (error "ID is not a string"))
   (unless (bufferp buffer) (error "BUFFER is not a buffer"))
   (unless (integerp start) (error "START is not an integer"))
@@ -432,12 +467,14 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; p
 ;; λ : Any → Boolean
 
+
 (defun locs-and-refs--location-p (loc)
   "Check if LOC is a Location object."
   (eq (car-safe loc) :location))
 
 ;; use
 ;; λ : (String → C) → Location → C
+
 
 (defun locs-and-refs--location-use (func)
   "Apply FUNC to the ID of a Location object."
@@ -448,12 +485,14 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; id
 ;; λ : Location → String
 
+
 (defun locs-and-refs--location-id (loc)
   "Extract the ID from a LOC object."
   (funcall (locs-and-refs--location-use (lambda (id &rest _args) id)) loc))
 
 ;; tag
 ;; λ : String
+
 
 (defun locs-and-refs--location-tag ()
   "Return the tag used for identifying locations."
@@ -462,12 +501,14 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; content-regex
 ;; λ : Location → RegEx
 
+
 (defun locs-and-refs--location-content-regex (loc)
   "Generate a regex for content of a Location with LOC's ID."
   (locs-and-refs--regex-content (locs-and-refs--reference-tag) (locs-and-refs--location-id loc)))
 
 ;; regex
 ;; λ : RegEx
+
 
 (defun locs-and-refs--location-regex ()
   "Return the regex pattern for matching locations."
@@ -482,8 +523,9 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;;   matches        :≡ file-matches + buffer-matches
 ;;   ui-matches(matches id(loc) tag(loc))
 
+
 (defun locs-and-refs--location-click (loc)
-  "Handle clicking on a location LOC by showing matching references in a new buffer."
+  "Click on a location LOC shows matching references in a new buffer."
   (let* ((content-regex (locs-and-refs--location-content-regex loc))
          (file-matches (locs-and-refs--search-files content-regex))
          (buffer-matches (locs-and-refs--search-buffers content-regex))
@@ -496,12 +538,15 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; A click on an instance shows all locations that it refers to.
 
 
+
 ;; mk
 ;; λ : Id Buffer Start End Name → Reference
 
+
 (defun locs-and-refs--reference-mk (id buffer start end name)
   "Create a Reference object with ID, BUFFER, START, END and NAME.
-ID is a string, BUFFER must be a buffer object, START and END are integer positions."
+ID is a string, BUFFER must be a buffer object, START and END are
+integer positions."
   (unless (stringp id) (error "ID is not a string"))
   (unless (bufferp buffer) (error "BUFFER is not a buffer"))
   (unless (integerp start) (error "START is not an integer"))
@@ -526,12 +571,14 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; p
 ;; λ : Any → Boolean
 
+
 (defun locs-and-refs--reference-p (ref)
   "Check if REF is a Reference object."
   (eq (car-safe ref) :reference))
 
 ;; use
 ;; λ : (String → C) → Reference → C
+
 
 (defun locs-and-refs--reference-use (func)
   "Apply FUNC to the ID of a Reference object."
@@ -542,12 +589,14 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; id
 ;; λ : Reference → String
 
+
 (defun locs-and-refs--reference-id (ref)
   "Extract the ID from a REF object."
   (funcall (locs-and-refs--reference-use (lambda (id &rest _args) id)) ref))
 
 ;; tag
 ;; λ : String
+
 
 (defun locs-and-refs--reference-tag ()
   "Return the tag used for identifying references."
@@ -556,6 +605,7 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; content-regex
 ;; λ : Reference → RegEx
 
+
 (defun locs-and-refs--reference-content-regex (ref)
   "Generate a regex for content of a Reference with REF's ID."
   (locs-and-refs--regex-content (locs-and-refs--location-tag) (locs-and-refs--reference-id ref)))
@@ -563,12 +613,14 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; regex
 ;; λ : Regex
 
+
 (defun locs-and-refs--reference-regex ()
   "Return the regex pattern for matching references."
   (locs-and-refs--regex-content (locs-and-refs--reference-tag)))
 
 ;; filename-regex
 ;; λ : Reference → RegEx
+
 
 (defun locs-and-refs--reference-filename-regex (ref)
   "Generate a regex for matching filenames with REF's ID."
@@ -584,8 +636,9 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;;   matches          :≡ file-matches + buffer-matches + filename-matches
 ;;   ui-matches(matches id(ref) tag(ref))
 
+
 (defun locs-and-refs--reference-click (ref)
-  "Handle clicking on a reference REF by showing matching locations in a new buffer."
+  "Click on a reference REF shows matching locations in a new buffer."
   (let* ((content-regex (locs-and-refs--reference-content-regex ref))
          (file-matches (locs-and-refs--search-files content-regex))
          (buffer-matches (locs-and-refs--search-buffers content-regex))
@@ -597,8 +650,10 @@ ID is a string, BUFFER must be a buffer object, START and END are integer positi
 ;; UI
 
 
+
 ;; insert-button
 ;; λ : Name Action → Button
+
 
 (defun locs-and-refs--ui-insert-button (name action tag)
   "Insert a clickable button with NAME and ACTION in the current buffer.
@@ -616,6 +671,7 @@ The face depends on TAG."
 
 ;; matches
 ;; λ : List(Match) Id Tag → Buffer
+
 
 (defun locs-and-refs--ui-matches (matches id tag)
   "Display MATCHES for ID from TAG in a buffer.
@@ -636,14 +692,38 @@ A click on a button opens the associated file."
          (insert-button
           (lambda (match)
             (with-current-buffer buffer
-              (setq buffer-read-only nil)
               (locs-and-refs--ui-insert-button
                (locs-and-refs--match-name match)
                (locs-and-refs--match-action match)
                tag)
-              (insert "\n")
-              (setq buffer-read-only t)))))
-    (with-current-buffer buffer (mapc insert-button matches))
+              (insert "\n")))))
+    (with-current-buffer buffer
+      (setq buffer-read-only nil)
+      (let (line-buffer-matches line-file-matches file-matches)
+        (setq file-matches
+              (alist-get t (seq-group-by #'locs-and-refs--file-match-p matches)))
+
+        (setq line-file-matches
+              (alist-get t (seq-group-by #'locs-and-refs--line-file-match-p matches)))
+
+        (setq line-buffer-matches
+              (alist-get t (seq-group-by #'locs-and-refs--line-buffer-match-p matches)))
+
+        (when line-buffer-matches
+          (insert "* Line buffer matches\n\n")
+          (mapc insert-button line-buffer-matches)
+          (insert "\n"))
+
+        (when line-file-matches
+          (insert "* Line file matches\n\n")
+          (mapc insert-button line-file-matches)
+          (insert "\n"))
+
+        (when file-matches
+          (insert "* File matches\n\n")
+          (mapc insert-button file-matches)
+          (insert "\n")))
+      (setq buffer-read-only t))
     (let* ((frame (make-frame `((name . "Search Results")
                                 (dedicated . t))))
            (window (frame-root-window frame)))
@@ -654,6 +734,7 @@ A click on a button opens the associated file."
 ;; Minor mode
 ;; Make sure that locations and references are activated in all buffers at all times
 ;; as long as they derive from `text-mode' or `prog-mode'.
+
 
 
 (defvar locs-and-refs--timer nil
@@ -786,13 +867,14 @@ More precisely:
 
 ;; Footer
 
+
 (provide 'locs-and-refs)
 
 ;;; locs-and-refs.el ends here
 
 ;; Local Variables:
 ;; coding: utf-8
-;; fill-column: 100
+;; byte-compile-docstring-max-column: 80
 ;; require-final-newline: t
 ;; sentence-end-double-space: nil
 ;; indent-tabs-mode: nil
