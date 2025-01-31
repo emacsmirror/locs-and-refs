@@ -112,6 +112,24 @@ This comes after buffer creation or modification."
   :group 'locs-and-refs
   :tag "Face for references")
 
+;; truncate-right
+;; - Function that truncates a string "xxxxx" to "xxx…" or "xxxxx",
+;;   given length and ellipsis.
+
+(defun locs-and-refs--truncate-right (string &optional length ellipsis)
+  "Truncate STRING to LENGTH characters, appending ELLIPSIS if truncated.
+STRING is the string to truncate.
+LENGTH specifies the number of characters to keep, defaulting to 20.
+ELLIPSIS is appended to the truncated string, defaulting to '…'.
+Raises an error if STRING is not a string, LENGTH is not a positive integer,
+or ELLIPSIS is not a string."
+  (let ((len (or length 20))
+        (ell (or ellipsis "…")))
+    (unless (stringp string) (error "`string' is not a string. string = %s" string))
+    (unless (and (integerp len) (< 0 len)) (error "`len' is not a strict positive integer. len = %s" len))
+    (unless (stringp ell) (error "`ellipsis' is not a string. ellipsis = %s" ellipsis))
+    (concat (substring-no-properties string 0 len) ell)))
+
 ;; LineFileMatch
 ;; - An instance represents a match at a given line in some file.
 
@@ -264,24 +282,21 @@ LineFileMatch, and LINE-BUFFER-FUNC to LineBufferMatch."
   (funcall
    (locs-and-refs--match-use
     (lambda (file-match)
-      (let ((name (file-name-nondirectory
-                   (locs-and-refs--file-match-path
-                    file-match)))
-            (type "File"))
-        (format "%s: %s" type name)))
+      (let* ((path (locs-and-refs--file-match-path file-match))
+             (name (locs-and-refs--truncate-right (file-name-nondirectory path)))
+             (ext (file-name-extension path)))
+        (format "%s.%s  %s" name ext path)))
 
     (lambda (line-file-match)
       (let ((name (file-name-nondirectory
                    (locs-and-refs--line-file-match-path
-                    line-file-match)))
-            (type "Line in file"))
-        (format "%s: %s" type name)))
+                    line-file-match))))
+        (format "%s" name)))
 
     (lambda (line-buffer-match)
       (let ((name (buffer-name
-                   (locs-and-refs--line-buffer-match-buffer line-buffer-match)))
-            (type "Line in buffer"))
-        (format "%s: %s" type name))))
+                   (locs-and-refs--line-buffer-match-buffer line-buffer-match))))
+        (format "%s" name))))
 
    match))
 
