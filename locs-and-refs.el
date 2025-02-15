@@ -5,7 +5,7 @@
 ;; Maintainer: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Homepage: https://github.com/phf-1/locs-and-refs
 ;; Package-Version: 0.17
-;; Package-Requires: ((emacs "27.1") (pcre2el "1.12"))
+;; Package-Requires: ((emacs "27.1") (pcre2el "1.11"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -17,33 +17,29 @@
 ;;
 ;;; Commentary:
 ;;
-;; Locations and References for Emacs
-;;
-;; If there is a string like "[[ref:1234]]" in some buffer, then this minor mode will
-;; turn it into a "Reference". A reference may be viewed as a button such that a
-;; click will search for the matching "Location" in files' content, file names and
-;; buffers. A matching location may be a string "[[id:1234]]" or a file named "1234".
-;;
+;; If there is a string like \"[[ref:1234]]\" in some buffer, then this minor mode
+;; will turn it into a \"Reference\". A reference may be viewed as a button
+;; such that a click will search for the matching \"Location\" in files'
+;; content, file names and buffers. A matching location may be a string
+;; \"[[id:1234]]\" or a file named \"1234\".
+;; 
 ;; More precisely:
-;;
+;; 
 ;; - A location is defined as:
 ;;   - or :ID: <ID>
 ;;   - or [[id:<ID>]]
 ;;   - or [[id:<ID>][<name>]]
-;;
+;; 
 ;; - A reference is defined as:
 ;;   - or :REF: <ID>
 ;;   - or [[ref:<ID>]]
 ;;   - or [[ref:<ID>][<name>]]
-;;
-;; This package requires 'ripgrep' and 'fd' to be installed on your system for full
-;; functionality.
-;;
+;; 
+;; This package requires `ripgrep' and `fd' to be installed on your system
+;; for full functionality.
+;; 
 ;; - Ripgrep: For fast text search.
 ;; - fd: For fast file search.
-;;
-;; The code structure lives at:
-;; - https://github.com/phf-1/.emacs.d/blob/master/elisp/locs-and-refs/locs-and-refs.org
 ;;
 ;;; Code:
 
@@ -502,7 +498,7 @@ integer positions."
 ;;   ui-matches(matches id(loc) tag(loc))
 
 (defun locs-and-refs--location-click (loc)
-  "Click on a location LOC shows matching references in a new buffer."
+  "Show references in a new buffer after a click on location LOC."
   (let* ((content-regex (locs-and-refs--location-content-regex loc))
          (file-matches (locs-and-refs--search-files content-regex))
          (buffer-matches (locs-and-refs--search-buffers content-regex))
@@ -605,7 +601,7 @@ integer positions."
 ;;   ui-matches(matches id(ref) tag(ref))
 
 (defun locs-and-refs--reference-click (ref)
-  "Click on a reference REF shows matching locations in a new buffer."
+  "Show matching locations in a new buffer after a click on a reference REF."
   (let* ((content-regex (locs-and-refs--reference-content-regex ref))
          (file-matches (locs-and-refs--search-files content-regex))
          (buffer-matches (locs-and-refs--search-buffers content-regex))
@@ -801,24 +797,29 @@ A click on a button opens the associated file."
 (define-minor-mode locs-and-refs-mode
   "Locations and References for Emacs.
 
-If there is a string like \"[[ref:1234]]\" in some buffer, then
-this minor mode will turn it into a \"Reference\". A reference
-may be viewed as a button such that a click will search for the
-matching \"Location\" in files' content, file names and
-buffers. A matching location may be a string \"[[id:1234]]\" or a
-file named \"1234\".
+If there is a string like \"[[ref:1234]]\" in some buffer, then this minor mode
+will turn it into a \"Reference\". A reference may be viewed as a button
+such that a click will search for the matching \"Location\" in files'
+content, file names and buffers. A matching location may be a string
+\"[[id:1234]]\" or a file named \"1234\".
 
 More precisely:
 
 - A location is defined as:
-  - or :ID: <UUID>
-  - or [[id:<UUID>]]
-  - or [[id:<UUID>][<name>]]
+  - or :ID: <ID>
+  - or [[id:<ID>]]
+  - or [[id:<ID>][<name>]]
 
 - A reference is defined as:
-  - or :REF: <UUID>
-  - or [[ref:<UUID>]]
-  - or [[ref:<UUID>][<name>]]"
+  - or :REF: <ID>
+  - or [[ref:<ID>]]
+  - or [[ref:<ID>][<name>]]
+
+This package requires `ripgrep' and `fd' to be installed on your system
+for full functionality.
+
+- Ripgrep: For fast text search.
+- fd: For fast file search."
   :init-value nil
   :lighter " L&R"
   :keymap nil
