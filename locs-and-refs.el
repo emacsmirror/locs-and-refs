@@ -670,17 +670,17 @@ A click on a button opens the associated file."
               (alist-get t (seq-group-by #'locs-and-refs--line-buffer-match-p matches)))
 
         (when line-buffer-matches
-          (insert "* Line buffer matches\n\n")
+          (insert "* Lines that matched in buffers\n\n")
           (mapc insert-button line-buffer-matches)
           (insert "\n"))
 
         (when line-file-matches
-          (insert "* Line file matches\n\n")
+          (insert "* Lines that matched in files\n\n")
           (mapc insert-button line-file-matches)
           (insert "\n"))
 
         (when file-matches
-          (insert "* File matches\n\n")
+          (insert "* Files that matched by name\n\n")
           (mapc insert-button file-matches)
           (insert "\n")))
       (setq buffer-read-only t))
