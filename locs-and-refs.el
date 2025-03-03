@@ -118,14 +118,13 @@ This comes after buffer creation or modification."
   "Truncate STRING to LENGTH characters, appending ELLIPSIS if truncated.
 STRING is the string to truncate.
 LENGTH specifies the number of characters to keep, defaulting to 20.
-ELLIPSIS is appended to the truncated string, defaulting to '…'.
+ELLIPSIS is appended to the truncated string, defaulting to ?….
 Raises an error if STRING is not a string, LENGTH is not a positive integer,
-or ELLIPSIS is not a string."
+or ELLIPSIS is not a character."
   (let ((len (or length 20))
         (ell (char-to-string (or ellipsis ?…))))
     (unless (stringp string) (error "`string' is not a string. string = %s" string))
     (unless (and (integerp len) (< 0 len)) (error "`len' is not a strict positive integer. len = %s" len))
-    (unless (stringp ell) (error "`ellipsis' is not a string. ellipsis = %s" ellipsis))
     (concat (substring-no-properties string 0 len) ell)))
 
 ;; LineFileMatch
@@ -453,10 +452,10 @@ ID can be either a string or a regex pattern."
 
 ;; - String Buffer Start End Name → Location
 
-(defun locs-and-refs--location-mk (id buffer start end name)
+(defun locs-and-refs--location-mk (id buffer start end &optional name)
   "Create a Location object with ID, BUFFER, START, END and NAME.
 ID is a string, BUFFER must be a buffer object, START and END are
-integer positions."
+integer positions. NAME is an optional string."
   (unless (stringp id) (error "ID is not a string"))
   (unless (bufferp buffer) (error "BUFFER is not a buffer"))
   (unless (integerp start) (error "START is not an integer"))
@@ -464,7 +463,7 @@ integer positions."
   (let (button loc display-name)
     (setq display-name
           (apply #'propertize
-                 `(,(substring-no-properties (or name (concat locs-and-refs-location-tag ":" id)))
+                 `(,(substring-no-properties (or name (concat ":" (upcase locs-and-refs-location-tag) ": " id)))
                    face locs-and-refs-location-face)))
     (setq button
           (with-current-buffer buffer
@@ -557,10 +556,10 @@ integer positions."
 
 ;; - Id Buffer Start End Name → Reference
 
-(defun locs-and-refs--reference-mk (id buffer start end name)
+(defun locs-and-refs--reference-mk (id buffer start end &optional name)
   "Create a Reference object with ID, BUFFER, START, END and NAME.
 ID is a string, BUFFER must be a buffer object, START and END are
-integer positions."
+integer positions. NAME is an optional string."
   (unless (stringp id) (error "ID is not a string"))
   (unless (bufferp buffer) (error "BUFFER is not a buffer"))
   (unless (integerp start) (error "START is not an integer"))
@@ -568,7 +567,7 @@ integer positions."
   (let (button ref display-name)
     (setq display-name
           (apply #'propertize
-                   `(,(substring-no-properties (or name (concat locs-and-refs-reference-tag ":" id)))
+                   `(,(substring-no-properties (or name (concat ":" (upcase locs-and-refs-reference-tag) ": " id)))
                      face locs-and-refs-reference-face)))
     (setq button
           (with-current-buffer buffer
