@@ -4,7 +4,7 @@
 ;; Author: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Maintainer: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Homepage: https://github.com/phf-1/locs-and-refs
-;; Package-Version: 0.18
+;; Package-Version: 0.19
 ;; Package-Requires: ((emacs "27.1") (pcre2el "1.11"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
@@ -103,6 +103,11 @@ This comes after buffer creation or modification."
   "A custom face with customizable colors."
   :group 'locs-and-refs
   :tag "Face for references")
+
+(defcustom locs-and-refs-results-buffer-prefix "L&R results"
+  "The prefix used to identify results buffers."
+  :type 'string
+  :group 'locs-and-refs)
 
 ;; truncate-right
 
@@ -683,7 +688,7 @@ The face depends on TAG."
 Opens a new dedicated frame and switches to the buffer in that frame.
 For each match, a button is inserted in the buffer.
 A click on a button opens the associated file."
-  (let* ((buffer (with-current-buffer (generate-new-buffer "Search results")
+  (let* ((buffer (with-current-buffer (generate-new-buffer locs-and-refs-results-buffer-prefix)
                    (setq buffer-read-only nil)
                    (erase-buffer)
                    (insert
@@ -729,7 +734,7 @@ A click on a button opens the associated file."
           (mapc insert-button file-matches)
           (insert "\n")))
       (setq buffer-read-only t))
-    (let* ((frame (make-frame `((name . "Search Results")
+    (let* ((frame (make-frame `((name . ,locs-and-refs-results-buffer-prefix)
                                 (dedicated . t))))
            (window (frame-root-window frame)))
       (set-window-buffer window buffer)
@@ -769,18 +774,28 @@ A click on a button opens the associated file."
                      (when (buffer-live-p buffer)
                        (locs-and-refs--activate-buffer buffer))))))))
 
+(defun locs-and-refs--delete-search-results-buffer (frame)
+  "Kill L&R search buffers associated with FRAME."
+  (let ((prefix locs-and-refs-results-buffer-prefix))    
+    (dolist (buffer (frame-parameter frame 'buffer-list))
+      (when (and (buffer-live-p buffer)
+                 (string-prefix-p prefix (buffer-name buffer)))
+        (kill-buffer buffer)))))
+
 (defun locs-and-refs--activate ()
   "Activate the main functionality of locs-and-refs mode."
   (locs-and-refs--check-ripgrep)
   (locs-and-refs--check-fd)
   (locs-and-refs--activate-buffers (buffer-list))
   (add-hook 'after-change-major-mode-hook #'locs-and-refs--activate-buffer)
-  (add-hook 'after-change-functions #'locs-and-refs--mutated))
+  (add-hook 'after-change-functions #'locs-and-refs--mutated)
+  (add-to-list 'delete-frame-functions #'locs-and-refs--delete-search-results-buffer))
 
 (defun locs-and-refs--deactivate ()
   "Deactivate the main functionality of locs-and-refs mode."
   (remove-hook 'after-change-major-mode-hook #'locs-and-refs--activate-buffer)
   (remove-hook 'after-change-functions #'locs-and-refs--mutated)
+  (remove #'locs-and-refs--delete-search-results-buffer delete-frame-functions)  
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
       (remove-overlays nil nil 'lar t)
