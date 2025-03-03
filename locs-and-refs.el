@@ -4,7 +4,7 @@
 ;; Author: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Maintainer: Pierre-Henry FRÖHRING <contact@phfrohring.com>
 ;; Homepage: https://github.com/phf-1/locs-and-refs
-;; Package-Version: 0.19
+;; Package-Version: 0.20
 ;; Package-Requires: ((emacs "27.1") (pcre2el "1.11"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;;
